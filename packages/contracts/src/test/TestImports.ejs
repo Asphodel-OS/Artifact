@@ -1,0 +1,43 @@
+// SPDX-License-Identifier: Unlicense
+pragma solidity ^0.8.0;
+
+import "std-contracts/test/MudTest.t.sol";
+
+// Libraries
+<% libraries.forEach(library => { -%>
+import "libraries/<%= library %>.sol";
+<% }); -%>
+
+// Components
+<% components.forEach(component => { -%>
+import { <%= component %>, ID as <%= component %>ID } from "components/<%- component %>.sol";
+<% }); -%>
+
+// Systems
+<% systems.forEach(system => { -%>
+import { <%= system.name %>, ID as <%= system.name %>ID } from "systems/<%- system.name %>.sol";
+<% }); -%>
+
+abstract contract TestSetupImports is MudTest {
+// Components vars
+<% components.forEach(component => { -%>
+<%= component %> _<%= component %>;
+<% }); -%>
+
+// System vars
+<% systems.forEach(system => { -%>
+<%= system.name %> _<%= system.name %>;
+<% }); -%>
+
+function setUp() public virtual override {
+super.setUp();
+
+<% components.forEach(component => { -%>
+_<%= component %> = <%= component %>(component(<%= component %>ID));
+<% }); -%>
+
+<% systems.forEach(system => { -%>
+_<%= system.name %> = <%= system.name %>(system(<%= system.name %>ID));
+<% }); -%>
+}
+}

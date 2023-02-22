@@ -1,0 +1,20 @@
+# node modules
+node_modules/
+
+# environment variables
+.env
+
+# ???
+bindings/
+deployments
+yarn-error.log
+
+# build and deployment artifacts 
+abi/
+artifacts/
+broadcast/
+/cache/
+out/
+src/libraries/LibDeploy.sol
+src/test/TestSetupImports.sol
+types/

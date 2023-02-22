@@ -1,0 +1,26 @@
+{
+  "components": [
+    "AddressOperatorComponent",
+    "AddressOwnerComponent",
+    "IsAccountComponent"
+  ],
+  "systems": [
+    {
+      "name": "AccountCreateSystem",
+      "writeAccess": [
+        "IsAccountComponent",
+        "AddressOperatorComponent",
+        "AddressOwnerComponent"
+      ]
+    },
+    {
+      "name": "AccountSetOperatorSystem",
+      "writeAccess": [
+        "AddressOperatorComponent"
+      ]
+    }
+  ],
+  "libraries": [
+    "LibAccount"
+  ]
+}
