@@ -12,16 +12,21 @@ import { IdHolderComponent, ID as IdHolderCompID } from "components/IdHolderComp
 import { IdSourceComponent, ID as IdSourceCompID } from "components/IdSourceComponent.sol";
 import { IdTargetComponent, ID as IdTargetCompID } from "components/IdTargetComponent.sol";
 import { IsCommitComponent, ID as IsCommitCompID } from "components/IsCommitComponent.sol";
+import { IsInventoryComponent, ID as IsInventoryCompID } from "components/IsInventoryComponent.sol";
 import { IsFungibleComponent, ID as IsFungCompID } from "components/IsFungibleComponent.sol";
 import { IsNonFungibleComponent, ID as IsNonFungCompID } from "components/IsNonFungibleComponent.sol";
 import { ProbabilitySuccessComponent, ID as ProbSuccCompID } from "components/ProbabilitySuccessComponent.sol";
 import { TypeComponent, ID as TypeCompID } from "components/TypeComponent.sol";
 import { BlockStartComponent, ID as BlockStartCompID } from "components/BlockStartComponent.sol";
 import { LibAccount } from "libraries/LibAccount.sol";
+import { LibInventory } from "libraries/LibInventory.sol";
+import { LibInventoryNF } from "libraries/LibInventoryNF.sol";
 
 // Q: what to use as the seed?
 library LibCommit {
   error InvalidType(string type_);
+  error InvalidSource(uint256 sourceID);
+  error InvalidTarget(uint256 targetID);
   error TooEarly(uint256 blockStart, uint256 blockNumber);
 
   /////////////////
@@ -57,13 +62,14 @@ library LibCommit {
   }
 
   // @dev Destroy the specified Commitment entity
-  function destroy(IComponents components, uint256 id) internal {
-    IsCommitComponent(getAddressById(components, IsCommitCompID)).remove(id);
-    ProbabilitySuccessComponent(getAddressById(components, ProbSuccCompID)).remove(id);
-    TypeComponent(getAddressById(components, TypeCompID)).remove(id);
-    IdTargetComponent(getAddressById(components, IdTargetCompID)).remove(id);
-    IdSourceComponent(getAddressById(components, IdSourceCompID)).remove(id);
-    BlockStartComponent(getAddressById(components, BlockStartCompID)).remove(id);
+  function del(IComponents components, uint256 id) internal {
+    getComponentById(components, IsCommitCompID).remove(id);
+    getComponentById(components, IdHolderCompID).remove(id);
+    getComponentById(components, ProbSuccCompID).remove(id);
+    getComponentById(components, TypeCompID).remove(id);
+    getComponentById(components, IdTargetCompID).remove(id);
+    getComponentById(components, IdSourceCompID).remove(id);
+    getComponentById(components, BlockStartCompID).remove(id);
   }
 
   // @dev Reveal a Commit entity, executing the action if the roll < probability. Delete
@@ -83,29 +89,65 @@ library LibCommit {
       // execute the reveal action depending on the step the type of commitment
       string memory type_ = getType(components, id);
       if (LibString.eq(type_, "CREATE")) {
-        //   revealCreate(world, components, id);
-        // } else if (LibString.eq(type_, "DESTROY")) {
-        //   revealDestroy(world, components, id);
-        // } else if (LibString.eq(type_, "ENHANCE")) {
-        //   revealEnhance();
-        // } else if (LibString.eq(type_, "SET")) {
-        //   revealSet();
-        // } else {
+        revealCreate(world, components, id);
+      } else if (LibString.eq(type_, "DESTROY")) {
+        revealDestroy(components, id);
+      } else if (LibString.eq(type_, "ENHANCE")) {
+        revealEnhance();
+      } else {
         revert InvalidType(type_);
       }
     }
 
     // clean up the the commitment
-    destroy(components, id);
+    del(components, id);
     return true;
   }
+
+  // @dev Execute a CREATE Commitment.
+  // TODO: atm only handles creation of inventory. implement other use cases (e.g. pet creation)
+  function revealCreate(
+    IWorld world,
+    IComponents components,
+    uint256 id
+  ) internal returns (uint256) {
+    // assume this is an inventory creation. get the source and target
+    uint256 accountID = getTarget(components, id);
+    uint256 itemRegistryID = getSource(components, id);
+
+    uint256 inventoryID;
+    if (LibInventory.isInstance(components, itemRegistryID)) {
+      inventoryID = LibInventory.create(world, components, accountID, itemRegistryID);
+    } else if (LibInventoryNF.isInstance(components, itemRegistryID)) {
+      inventoryID = LibInventoryNF.create(world, components, accountID, itemRegistryID);
+    } else {
+      revert InvalidSource(itemRegistryID);
+    }
+    return inventoryID;
+  }
+
+  // @dev Execute a DESTROY Commitment.
+  // TODO: atm only handles creation inventory. implement other use cases (are there any?)
+  function revealDestroy(IComponents components, uint256 id) internal {
+    // atm we can just assume this is an inventory destruction
+    uint256 entityID = getTarget(components, id);
+
+    if (LibInventory.isInstance(components, entityID)) {
+      LibInventory.del(components, entityID);
+    } else if (LibInventoryNF.isInstance(components, entityID)) {
+      LibInventoryNF.del(components, entityID);
+    } else {
+      revert InvalidTarget(entityID);
+    }
+  }
+
+  function revealEnhance() internal returns (uint256) {}
 
   /////////////////
   // CHECKS
 
   // @dev Check if a Commit entity can be revealed. At the moment this checks whether the is the owner
-  // this is the lazy
-  //
+  // of the commitment and whether the current block number is greater than the start block.
   function canReveal(IComponents components, uint256 id) internal view returns (bool) {
     return
       IdHolderComponent(getAddressById(components, IdHolderCompID)).getValue(id) ==

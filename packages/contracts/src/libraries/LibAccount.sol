@@ -87,14 +87,14 @@ library LibAccount {
     address owner,
     address operator
   ) internal view returns (uint256[] memory) {
-    uint256 numFilters;
-    if (owner != address(0)) numFilters++;
-    if (operator != address(0)) numFilters++;
+    uint256 setFilters; // number of optional non-zero filters
+    if (owner != address(0)) setFilters++;
+    if (operator != address(0)) setFilters++;
 
-    QueryFragment[] memory fragments = new QueryFragment[](numFilters + 1);
+    uint256 filterCount = 1; // number of mandatory filters
+    QueryFragment[] memory fragments = new QueryFragment[](setFilters + filterCount);
     fragments[0] = QueryFragment(QueryType.Has, getComponentById(components, IsAccCompID), "");
 
-    uint256 filterCount;
     if (owner != address(0)) {
       fragments[++filterCount] = QueryFragment(
         QueryType.HasValue,

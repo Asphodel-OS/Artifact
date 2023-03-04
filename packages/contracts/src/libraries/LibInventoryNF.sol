@@ -8,9 +8,27 @@ import { LibQuery } from "solecs/LibQuery.sol";
 import { getAddressById, getComponentById } from "solecs/utils.sol";
 
 import { IdHolderComponent, ID as IdHolderCompID } from "components/IdHolderComponent.sol";
+import { IndexEquipComponent, ID as IndexEquipCompID } from "components/IndexEquipComponent.sol";
 import { IndexItemComponent, ID as IndexItemCompID } from "components/IndexItemComponent.sol";
 import { IsInventoryComponent, ID as IsInvCompID } from "components/IsInventoryComponent.sol";
 import { IsNonFungibleComponent, ID as IsNonFungCompID } from "components/IsNonFungibleComponent.sol";
+import { AffinityComponent, ID as AffCompID } from "components/AffinityComponent.sol";
+import { AttackComponent, ID as AttCompID } from "components/AttackComponent.sol";
+import { ClassComponent, ID as ClassCompID } from "components/ClassComponent.sol";
+import { DefenseComponent, ID as DefCompID } from "components/DefenseComponent.sol";
+import { DurationComponent, ID as DurCompID } from "components/DurationComponent.sol";
+import { HPComponent, ID as HPCompID } from "components/HPComponent.sol";
+import { LevelComponent, ID as LevelCompID } from "components/LevelComponent.sol";
+import { MagicAttComponent, ID as MagAttCompID } from "components/MagicAttComponent.sol";
+import { MagicDefComponent, ID as MagDefCompID } from "components/MagicDefComponent.sol";
+import { MPComponent, ID as MPCompID } from "components/MPComponent.sol";
+import { NameComponent, ID as NameCompID } from "components/NameComponent.sol";
+import { ProbabilitySuccessComponent, ID as ProbSuccCompID } from "components/ProbabilitySuccessComponent.sol";
+import { ProbabilityFailureComponent, ID as ProbFailCompID } from "components/ProbabilityFailureComponent.sol";
+import { RangeComponent, ID as RangeCompID } from "components/RangeComponent.sol";
+import { SpeedComponent, ID as SpeedCompID } from "components/SpeedComponent.sol";
+import { TypeComponent, ID as TypeCompID } from "components/TypeComponent.sol";
+import { LibRegistryItem } from "libraries/LibRegistryItem.sol";
 
 // handles nonfungible inventory instances
 library LibInventoryNF {
@@ -30,8 +48,18 @@ library LibInventoryNF {
     IdHolderComponent(getAddressById(components, IdHolderCompID)).set(id, holderID);
     IndexItemComponent(getAddressById(components, IndexItemCompID)).set(id, itemIndex);
 
-    // TODO: copy over the details from the registry. no variance for now
+    // TODO: copy over the details from the registry. no variance in stats for now
     return id;
+  }
+
+  // Delete the inventory instance
+  function del(IComponents components, uint256 id) internal {
+    getComponentById(components, IsInvCompID).remove(id);
+    getComponentById(components, IsNonFungCompID).remove(id);
+    getComponentById(components, IdHolderCompID).remove(id);
+    getComponentById(components, IndexItemCompID).remove(id);
+
+    // TODO: detect stats that are set and delete them
   }
 
   // Transfer the specified NF inventory instance by updating the holder
@@ -84,24 +112,24 @@ library LibInventoryNF {
     uint256 holderID,
     uint256 itemIndex
   ) internal view returns (uint256[] memory) {
-    uint256 numFilters;
-    if (holderID != 0) numFilters++;
-    if (itemIndex != 0) numFilters++;
+    uint256 setFilters; // number of optional non-zero filters
+    if (holderID != 0) setFilters++;
+    if (itemIndex != 0) setFilters++;
 
-    QueryFragment[] memory fragments = new QueryFragment[](numFilters + 2);
+    uint256 filterCount = 2; // number of mandatory filters
+    QueryFragment[] memory fragments = new QueryFragment[](setFilters + filterCount);
     fragments[0] = QueryFragment(QueryType.Has, getComponentById(components, IsInvCompID), "");
     fragments[1] = QueryFragment(QueryType.Has, getComponentById(components, IsNonFungCompID), "");
 
-    uint256 filterCount;
     if (holderID != 0) {
-      fragments[++filterCount] = QueryFragment(
+      fragments[filterCount++] = QueryFragment(
         QueryType.HasValue,
         getComponentById(components, IdHolderCompID),
         abi.encode(holderID)
       );
     }
     if (itemIndex != 0) {
-      fragments[++filterCount] = QueryFragment(
+      fragments[filterCount++] = QueryFragment(
         QueryType.HasValue,
         getComponentById(components, IndexItemCompID),
         abi.encode(itemIndex)

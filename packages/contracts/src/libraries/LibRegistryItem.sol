@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
+import { LibString } from "solady/utils/LibString.sol";
 import { IUint256Component as IComponents } from "solecs/interfaces/IUint256Component.sol";
 import { IWorld } from "solecs/interfaces/IWorld.sol";
 import { QueryFragment, QueryType } from "solecs/interfaces/Query.sol";
@@ -8,7 +9,7 @@ import { LibQuery } from "solecs/LibQuery.sol";
 import { getAddressById, getComponentById } from "solecs/utils.sol";
 
 import { IndexItemComponent, ID as IndexItemCompID } from "components/IndexItemComponent.sol";
-import { IndexConsumableComponent, ID as IndexConsumableCompID } from "components/IndexConsumableComponent.sol";
+import { IndexConsumableComponent, ID as IndexConsCompID } from "components/IndexConsumableComponent.sol";
 import { IndexEquipComponent, ID as IndexEquipCompID } from "components/IndexEquipComponent.sol";
 import { IsRegistryComponent, ID as IsRegCompID } from "components/IsRegistryComponent.sol";
 import { AffinityComponent, ID as AffCompID } from "components/AffinityComponent.sol";
@@ -46,9 +47,6 @@ import { TypeComponent, ID as TypeCompID } from "components/TypeComponent.sol";
 // should revisit their naming if use cases demand further tiering. Very likely we will
 // have for the equipment use case. There is no requirement to use these taxonomic tiers
 // exhaustively, but we should be consistent on depth within a given context.
-//
-// At the moment, we set even 0 values. We should consider whether that makes sense.
-
 library LibRegistryItem {
   /////////////////
   // REGISTRATION
@@ -133,10 +131,7 @@ library LibRegistryItem {
     uint256 itemIndex = getItemCount(components) + 1;
     IsRegistryComponent(getAddressById(components, IsRegCompID)).set(id);
     IndexItemComponent(getAddressById(components, IndexItemCompID)).set(id, itemIndex);
-    IndexConsumableComponent(getAddressById(components, IndexConsumableCompID)).set(
-      id,
-      consumableIndex
-    );
+    IndexConsumableComponent(getAddressById(components, IndexConsCompID)).set(id, consumableIndex);
     NameComponent(getAddressById(components, NameCompID)).set(id, name);
     ClassComponent(getAddressById(components, ClassCompID)).set(id, string("POTION"));
     if (duration > 0) DurationComponent(getAddressById(components, DurCompID)).set(id, duration);
@@ -169,10 +164,7 @@ library LibRegistryItem {
     uint256 itemIndex = getItemCount(components) + 1;
     IsRegistryComponent(getAddressById(components, IsRegCompID)).set(id);
     IndexItemComponent(getAddressById(components, IndexItemCompID)).set(id, itemIndex);
-    IndexConsumableComponent(getAddressById(components, IndexConsumableCompID)).set(
-      id,
-      consumableIndex
-    );
+    IndexConsumableComponent(getAddressById(components, IndexConsCompID)).set(id, consumableIndex);
     NameComponent(getAddressById(components, NameCompID)).set(id, name);
     ClassComponent(getAddressById(components, ClassCompID)).set(id, string("SCROLL"));
     TypeComponent(getAddressById(components, TypeCompID)).set(id, type_);
@@ -197,7 +189,7 @@ library LibRegistryItem {
   }
 
   function getConsumableIndex(IComponents components, uint256 id) internal view returns (uint256) {
-    return IndexConsumableComponent(getAddressById(components, IndexConsumableCompID)).getValue(id);
+    return IndexConsumableComponent(getAddressById(components, IndexConsCompID)).getValue(id);
   }
 
   function getEquipIndex(IComponents components, uint256 id) internal view returns (uint256) {
@@ -244,19 +236,11 @@ library LibRegistryItem {
     return NameComponent(getAddressById(components, NameCompID)).getValue(id);
   }
 
-  function getProbabilityFailure(IComponents components, uint256 id)
-    internal
-    view
-    returns (uint256)
-  {
+  function getProbFailure(IComponents components, uint256 id) internal view returns (uint256) {
     return ProbabilityFailureComponent(getAddressById(components, ProbFailCompID)).getValue(id);
   }
 
-  function getProbabilitySuccess(IComponents components, uint256 id)
-    internal
-    view
-    returns (uint256)
-  {
+  function getProbSuccess(IComponents components, uint256 id) internal view returns (uint256) {
     return ProbabilitySuccessComponent(getAddressById(components, ProbSuccCompID)).getValue(id);
   }
 
@@ -272,11 +256,66 @@ library LibRegistryItem {
     return TypeComponent(getAddressById(components, TypeCompID)).getValue(id);
   }
 
+  /////////////////
+  // QUERIES
+
   // get the number of item registry entries
   function getItemCount(IComponents components) internal view returns (uint256) {
     QueryFragment[] memory fragments = new QueryFragment[](2);
     fragments[0] = QueryFragment(QueryType.Has, getComponentById(components, IsRegCompID), "");
     fragments[1] = QueryFragment(QueryType.Has, getComponentById(components, IndexItemCompID), "");
     return LibQuery.query(fragments).length;
+  }
+
+  // get the registry entry by item index
+  function getByItemIndex(IComponents components, uint256 itemIndex)
+    internal
+    view
+    returns (uint256 result)
+  {
+    uint256[] memory results = _getAllX(components, itemIndex, 0, 0);
+    if (results.length != 0) result = results[0];
+  }
+
+  // get all fungible(item) inventory entities matching filters. 0 values indicate no filter
+  function _getAllX(
+    IComponents components,
+    uint256 itemIndex,
+    uint256 equipIndex,
+    uint256 consumableIndex
+  ) internal view returns (uint256[] memory) {
+    uint256 setFilters; // number of optional non-zero filters
+    if (itemIndex != 0) setFilters++;
+    if (equipIndex != 0) setFilters++;
+    if (consumableIndex != 0) setFilters++;
+
+    uint256 filterCount = 2; // number of mandatory filters
+    QueryFragment[] memory fragments = new QueryFragment[](setFilters + filterCount);
+    fragments[0] = QueryFragment(QueryType.Has, getComponentById(components, IsRegCompID), "");
+    fragments[1] = QueryFragment(QueryType.Has, getComponentById(components, IndexItemCompID), "");
+
+    if (itemIndex != 0) {
+      fragments[filterCount++] = QueryFragment(
+        QueryType.HasValue,
+        getComponentById(components, IndexItemCompID),
+        abi.encode(itemIndex)
+      );
+    }
+    if (equipIndex != 0) {
+      fragments[filterCount++] = QueryFragment(
+        QueryType.HasValue,
+        getComponentById(components, IndexEquipCompID),
+        abi.encode(equipIndex)
+      );
+    }
+    if (consumableIndex != 0) {
+      fragments[filterCount++] = QueryFragment(
+        QueryType.HasValue,
+        getComponentById(components, IndexConsCompID),
+        abi.encode(consumableIndex)
+      );
+    }
+
+    return LibQuery.query(fragments);
   }
 }

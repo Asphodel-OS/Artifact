@@ -78,6 +78,7 @@ library LibInventory {
   // Delete the inventory instance
   function del(IComponents components, uint256 id) internal {
     IsInventoryComponent(getAddressById(components, IsInvCompID)).remove(id);
+    IsFungibleComponent(getAddressById(components, IsFungCompID)).remove(id);
     IdHolderComponent(getAddressById(components, IdHolderCompID)).remove(id);
     IndexItemComponent(getAddressById(components, IndexItemCompID)).remove(id);
     BalanceComponent(getAddressById(components, BalanceCompID)).remove(id);
@@ -140,24 +141,24 @@ library LibInventory {
     uint256 holderID,
     uint256 itemIndex
   ) internal view returns (uint256[] memory) {
-    uint256 numFilters;
-    if (holderID != 0) numFilters++;
-    if (itemIndex != 0) numFilters++;
+    uint256 setFilters; // number of optional non-zero filters
+    if (holderID != 0) setFilters++;
+    if (itemIndex != 0) setFilters++;
 
-    QueryFragment[] memory fragments = new QueryFragment[](numFilters + 2);
+    uint256 filterCount = 2; // number of mandatory filters
+    QueryFragment[] memory fragments = new QueryFragment[](setFilters + filterCount);
     fragments[0] = QueryFragment(QueryType.Has, getComponentById(components, IsInvCompID), "");
     fragments[1] = QueryFragment(QueryType.Has, getComponentById(components, IsFungCompID), "");
 
-    uint256 filterCount;
     if (holderID != 0) {
-      fragments[++filterCount] = QueryFragment(
+      fragments[filterCount++] = QueryFragment(
         QueryType.HasValue,
         getComponentById(components, IdHolderCompID),
         abi.encode(holderID)
       );
     }
     if (itemIndex != 0) {
-      fragments[++filterCount] = QueryFragment(
+      fragments[filterCount++] = QueryFragment(
         QueryType.HasValue,
         getComponentById(components, IndexItemCompID),
         abi.encode(itemIndex)
