@@ -19,6 +19,7 @@ library LibInventory {
   // INTERACTIONS
 
   // Create a new fungible (item) inventory instance, owned by an entity with a Holder ID
+  // Assume that an inventory for the item does not already exist on the target Holder.
   function create(
     IWorld world,
     IComponents components,

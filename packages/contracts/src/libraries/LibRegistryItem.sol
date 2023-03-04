@@ -51,10 +51,10 @@ import { TypeComponent, ID as TypeCompID } from "components/TypeComponent.sol";
 
 library LibRegistryItem {
   /////////////////
-  // INTERACTIONS
+  // REGISTRATION
 
-  // Create a Wearable (equipment) registry entry. (e.g. armor, helmet, etc.)
-  function createWearable(
+  // Register a Wearable (equipment) registry entry. (e.g. armor, helmet, etc.)
+  function registerWearable(
     IWorld world,
     IComponents components,
     uint256 equipIndex,
@@ -84,8 +84,8 @@ library LibRegistryItem {
     return id;
   }
 
-  // Create a Wieldable (equipment) registry entry. (e.g. sword, axe, etc.)
-  function createWieldable(
+  // Register a Wieldable (equipment) registry entry. (e.g. sword, axe, etc.)
+  function registerWieldable(
     IWorld world,
     IComponents components,
     uint256 equipIndex,
@@ -115,8 +115,8 @@ library LibRegistryItem {
     return id;
   }
 
-  // Create a Potion (consumable) registry entry. (e.g. health, mana, stat enhancement etc.)
-  function createPotion(
+  // Register a Potion (consumable) registry entry. (e.g. health, mana, stat enhancement etc.)
+  function registerPotion(
     IWorld world,
     IComponents components,
     uint256 consumableIndex,
@@ -149,8 +149,8 @@ library LibRegistryItem {
     return id;
   }
 
-  // Create a Scroll (consumable) registry entry. (e.g. 60% +4 att upgrade)
-  function createScroll(
+  // Register a Scroll (consumable) registry entry. (e.g. 60% +4 att upgrade)
+  function registerScroll(
     IWorld world,
     IComponents components,
     uint256 consumableIndex,

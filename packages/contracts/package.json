@@ -58,6 +58,6 @@
   },
   "dependencies": {
     "@solidstate/contracts": "^0.0.52",
-    "solady": "Vectorized/solady"
+    "solady": "^0.0.78"
   }
 }
