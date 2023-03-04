@@ -15,7 +15,7 @@ import { IsCommitComponent, ID as IsCommitCompID } from "components/IsCommitComp
 import { IsInventoryComponent, ID as IsInventoryCompID } from "components/IsInventoryComponent.sol";
 import { IsFungibleComponent, ID as IsFungCompID } from "components/IsFungibleComponent.sol";
 import { IsNonFungibleComponent, ID as IsNonFungCompID } from "components/IsNonFungibleComponent.sol";
-import { ProbabilitySuccessComponent, ID as ProbSuccCompID } from "components/ProbabilitySuccessComponent.sol";
+import { ProbabilityComponent, ID as ProbCompID } from "components/ProbabilityComponent.sol";
 import { TypeComponent, ID as TypeCompID } from "components/TypeComponent.sol";
 import { BlockStartComponent, ID as BlockStartCompID } from "components/BlockStartComponent.sol";
 import { LibAccount } from "libraries/LibAccount.sol";
@@ -53,7 +53,7 @@ library LibCommit {
     uint256 accountID = LibAccount.getByOperator(components, msg.sender);
     IsCommitComponent(getAddressById(components, IsCommitCompID)).set(id);
     IdHolderComponent(getAddressById(components, IdHolderCompID)).set(id, accountID);
-    ProbabilitySuccessComponent(getAddressById(components, ProbSuccCompID)).set(id, probability);
+    ProbabilityComponent(getAddressById(components, ProbCompID)).set(id, probability);
     TypeComponent(getAddressById(components, TypeCompID)).set(id, type_);
     IdTargetComponent(getAddressById(components, IdTargetCompID)).set(id, targetID);
     IdSourceComponent(getAddressById(components, IdSourceCompID)).set(id, sourceID);
@@ -65,7 +65,7 @@ library LibCommit {
   function del(IComponents components, uint256 id) internal {
     getComponentById(components, IsCommitCompID).remove(id);
     getComponentById(components, IdHolderCompID).remove(id);
-    getComponentById(components, ProbSuccCompID).remove(id);
+    getComponentById(components, ProbCompID).remove(id);
     getComponentById(components, TypeCompID).remove(id);
     getComponentById(components, IdTargetCompID).remove(id);
     getComponentById(components, IdSourceCompID).remove(id);
@@ -159,7 +159,7 @@ library LibCommit {
   // COMPONENT RETRIEVAL
 
   function getProbability(IComponents components, uint256 id) internal view returns (uint256) {
-    return ProbabilitySuccessComponent(getAddressById(components, ProbSuccCompID)).getValue(id);
+    return ProbabilityComponent(getAddressById(components, ProbCompID)).getValue(id);
   }
 
   function getSource(IComponents components, uint256 id) internal view returns (uint256) {

@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import { LibString } from "solady/utils/LibString.sol";
 import { IUint256Component as IComponents } from "solecs/interfaces/IUint256Component.sol";
 import { IWorld } from "solecs/interfaces/IWorld.sol";
 import { QueryFragment, QueryType } from "solecs/interfaces/Query.sol";
@@ -13,21 +12,10 @@ import { IndexConsumableComponent, ID as IndexConsCompID } from "components/Inde
 import { IndexEquipComponent, ID as IndexEquipCompID } from "components/IndexEquipComponent.sol";
 import { IsRegistryComponent, ID as IsRegCompID } from "components/IsRegistryComponent.sol";
 import { AffinityComponent, ID as AffCompID } from "components/AffinityComponent.sol";
-import { AttackComponent, ID as AttCompID } from "components/AttackComponent.sol";
 import { ClassComponent, ID as ClassCompID } from "components/ClassComponent.sol";
-import { DefenseComponent, ID as DefCompID } from "components/DefenseComponent.sol";
-import { DurationComponent, ID as DurCompID } from "components/DurationComponent.sol";
-import { HPComponent, ID as HPCompID } from "components/HPComponent.sol";
-import { LevelComponent, ID as LevelCompID } from "components/LevelComponent.sol";
-import { MagicAttComponent, ID as MagAttCompID } from "components/MagicAttComponent.sol";
-import { MagicDefComponent, ID as MagDefCompID } from "components/MagicDefComponent.sol";
-import { MPComponent, ID as MPCompID } from "components/MPComponent.sol";
 import { NameComponent, ID as NameCompID } from "components/NameComponent.sol";
-import { ProbabilitySuccessComponent, ID as ProbSuccCompID } from "components/ProbabilitySuccessComponent.sol";
-import { ProbabilityFailureComponent, ID as ProbFailCompID } from "components/ProbabilityFailureComponent.sol";
-import { RangeComponent, ID as RangeCompID } from "components/RangeComponent.sol";
-import { SpeedComponent, ID as SpeedCompID } from "components/SpeedComponent.sol";
 import { TypeComponent, ID as TypeCompID } from "components/TypeComponent.sol";
+import { LibStat } from "libraries/LibStat.sol";
 
 // Registries hold shared information on individual entity instances in the world.
 // This can include attribute information such as stats and effects or even prices
@@ -70,15 +58,15 @@ library LibRegistryItem {
     IsRegistryComponent(getAddressById(components, IsRegCompID)).set(id);
     IndexItemComponent(getAddressById(components, IndexItemCompID)).set(id, itemIndex);
     IndexEquipComponent(getAddressById(components, IndexEquipCompID)).set(id, equipIndex);
-    NameComponent(getAddressById(components, NameCompID)).set(id, name);
-    ClassComponent(getAddressById(components, ClassCompID)).set(id, string("WEARABLE"));
-    TypeComponent(getAddressById(components, TypeCompID)).set(id, type_);
     AffinityComponent(getAddressById(components, AffCompID)).set(id, affinity); // check for empty strings
-    if (level > 0) LevelComponent(getAddressById(components, LevelCompID)).set(id, level);
-    if (hp > 0) HPComponent(getAddressById(components, HPCompID)).set(id, hp);
-    if (mp > 0) MPComponent(getAddressById(components, MPCompID)).set(id, mp);
-    if (defense > 0) DefenseComponent(getAddressById(components, DefCompID)).set(id, defense);
-    if (magicDef > 0) MagicDefComponent(getAddressById(components, MagDefCompID)).set(id, magicDef);
+    ClassComponent(getAddressById(components, ClassCompID)).set(id, string("WEARABLE"));
+    NameComponent(getAddressById(components, NameCompID)).set(id, name);
+    TypeComponent(getAddressById(components, TypeCompID)).set(id, type_);
+    if (level > 0) LibStat.setLevel(components, id, level);
+    if (hp > 0) LibStat.setHP(components, id, hp);
+    if (mp > 0) LibStat.setMP(components, id, mp);
+    if (defense > 0) LibStat.setDefense(components, id, defense);
+    if (magicDef > 0) LibStat.setMagicDef(components, id, magicDef);
     return id;
   }
 
@@ -101,15 +89,15 @@ library LibRegistryItem {
     IsRegistryComponent(getAddressById(components, IsRegCompID)).set(id);
     IndexItemComponent(getAddressById(components, IndexItemCompID)).set(id, itemIndex);
     IndexEquipComponent(getAddressById(components, IndexEquipCompID)).set(id, equipIndex);
-    NameComponent(getAddressById(components, NameCompID)).set(id, name);
-    ClassComponent(getAddressById(components, ClassCompID)).set(id, string("WIELDABLE"));
-    TypeComponent(getAddressById(components, TypeCompID)).set(id, type_);
     AffinityComponent(getAddressById(components, AffCompID)).set(id, affinity); // check for empty strings
-    if (level > 0) LevelComponent(getAddressById(components, LevelCompID)).set(id, level);
-    if (attack > 0) AttackComponent(getAddressById(components, AttCompID)).set(id, attack);
-    if (magicAtt > 0) MagicAttComponent(getAddressById(components, MagAttCompID)).set(id, magicAtt);
-    if (range > 0) RangeComponent(getAddressById(components, RangeCompID)).set(id, range);
-    if (speed > 0) SpeedComponent(getAddressById(components, SpeedCompID)).set(id, speed);
+    ClassComponent(getAddressById(components, ClassCompID)).set(id, string("WIELDABLE"));
+    NameComponent(getAddressById(components, NameCompID)).set(id, name);
+    TypeComponent(getAddressById(components, TypeCompID)).set(id, type_);
+    if (level > 0) LibStat.setLevel(components, id, level);
+    if (attack > 0) LibStat.setAttack(components, id, attack);
+    if (magicAtt > 0) LibStat.setMagicAtt(components, id, magicAtt);
+    if (range > 0) LibStat.setRange(components, id, range);
+    if (speed > 0) LibStat.setSpeed(components, id, speed);
     return id;
   }
 
@@ -132,15 +120,15 @@ library LibRegistryItem {
     IsRegistryComponent(getAddressById(components, IsRegCompID)).set(id);
     IndexItemComponent(getAddressById(components, IndexItemCompID)).set(id, itemIndex);
     IndexConsumableComponent(getAddressById(components, IndexConsCompID)).set(id, consumableIndex);
-    NameComponent(getAddressById(components, NameCompID)).set(id, name);
     ClassComponent(getAddressById(components, ClassCompID)).set(id, string("POTION"));
-    if (duration > 0) DurationComponent(getAddressById(components, DurCompID)).set(id, duration);
-    if (hp > 0) HPComponent(getAddressById(components, HPCompID)).set(id, hp);
-    if (mp > 0) MPComponent(getAddressById(components, MPCompID)).set(id, mp);
-    if (attack > 0) AttackComponent(getAddressById(components, AttCompID)).set(id, attack);
-    if (defense > 0) DefenseComponent(getAddressById(components, DefCompID)).set(id, defense);
-    if (magicAtt > 0) MagicAttComponent(getAddressById(components, MagAttCompID)).set(id, magicAtt);
-    if (magicDef > 0) MagicDefComponent(getAddressById(components, MagDefCompID)).set(id, magicDef);
+    NameComponent(getAddressById(components, NameCompID)).set(id, name);
+    if (duration > 0) LibStat.setDuration(components, id, duration);
+    if (hp > 0) LibStat.setHP(components, id, hp);
+    if (mp > 0) LibStat.setMP(components, id, mp);
+    if (attack > 0) LibStat.setAttack(components, id, attack);
+    if (defense > 0) LibStat.setDefense(components, id, defense);
+    if (magicAtt > 0) LibStat.setMagicAtt(components, id, magicAtt);
+    if (magicDef > 0) LibStat.setMagicDef(components, id, magicDef);
     return id;
   }
 
@@ -165,24 +153,61 @@ library LibRegistryItem {
     IsRegistryComponent(getAddressById(components, IsRegCompID)).set(id);
     IndexItemComponent(getAddressById(components, IndexItemCompID)).set(id, itemIndex);
     IndexConsumableComponent(getAddressById(components, IndexConsCompID)).set(id, consumableIndex);
-    NameComponent(getAddressById(components, NameCompID)).set(id, name);
     ClassComponent(getAddressById(components, ClassCompID)).set(id, string("SCROLL"));
+    NameComponent(getAddressById(components, NameCompID)).set(id, name);
     TypeComponent(getAddressById(components, TypeCompID)).set(id, type_);
-    if (probSuccess > 0)
-      ProbabilitySuccessComponent(getAddressById(components, ProbSuccCompID)).set(id, probSuccess);
-    if (probFailure > 0)
-      ProbabilityFailureComponent(getAddressById(components, ProbFailCompID)).set(id, probFailure);
-    if (hp > 0) HPComponent(getAddressById(components, HPCompID)).set(id, hp);
-    if (mp > 0) MPComponent(getAddressById(components, MPCompID)).set(id, mp);
-    if (attack > 0) AttackComponent(getAddressById(components, AttCompID)).set(id, attack);
-    if (defense > 0) DefenseComponent(getAddressById(components, DefCompID)).set(id, defense);
-    if (magicAtt > 0) MagicAttComponent(getAddressById(components, MagAttCompID)).set(id, magicAtt);
-    if (magicDef > 0) MagicDefComponent(getAddressById(components, MagDefCompID)).set(id, magicDef);
+    if (probSuccess > 0) LibStat.setProbability(components, id, probSuccess);
+    if (probFailure > 0) LibStat.setProbabilityFail(components, id, probFailure);
+    if (hp > 0) LibStat.setHP(components, id, hp);
+    if (mp > 0) LibStat.setMP(components, id, mp);
+    if (attack > 0) LibStat.setAttack(components, id, attack);
+    if (defense > 0) LibStat.setDefense(components, id, defense);
+    if (magicAtt > 0) LibStat.setMagicAtt(components, id, magicAtt);
+    if (magicDef > 0) LibStat.setMagicDef(components, id, magicDef);
     return id;
   }
 
   /////////////////
-  // COMPONENT RETRIEVAL
+  // CHECKERS
+
+  function isInstance(IComponents components, uint256 id) internal view returns (bool) {
+    return hasIsRegistry(components, id) && hasItemIndex(components, id);
+  }
+
+  function hasIsRegistry(IComponents components, uint256 id) internal view returns (bool) {
+    return IsRegistryComponent(getAddressById(components, IsRegCompID)).has(id);
+  }
+
+  function hasConsumableIndex(IComponents components, uint256 id) internal view returns (bool) {
+    return IndexConsumableComponent(getAddressById(components, IndexConsCompID)).has(id);
+  }
+
+  function hasEquipIndex(IComponents components, uint256 id) internal view returns (bool) {
+    return IndexEquipComponent(getAddressById(components, IndexEquipCompID)).has(id);
+  }
+
+  function hasItemIndex(IComponents components, uint256 id) internal view returns (bool) {
+    return IndexItemComponent(getAddressById(components, IndexItemCompID)).has(id);
+  }
+
+  function hasAffinity(IComponents components, uint256 id) internal view returns (bool) {
+    return AffinityComponent(getAddressById(components, AffCompID)).has(id);
+  }
+
+  function hasClass(IComponents components, uint256 id) internal view returns (bool) {
+    return ClassComponent(getAddressById(components, ClassCompID)).has(id);
+  }
+
+  function hasName(IComponents components, uint256 id) internal view returns (bool) {
+    return NameComponent(getAddressById(components, NameCompID)).has(id);
+  }
+
+  function hasType(IComponents components, uint256 id) internal view returns (bool) {
+    return TypeComponent(getAddressById(components, TypeCompID)).has(id);
+  }
+
+  /////////////////
+  // GETTERS
 
   function getItemIndex(IComponents components, uint256 id) internal view returns (uint256) {
     return IndexItemComponent(getAddressById(components, IndexItemCompID)).getValue(id);
@@ -200,56 +225,12 @@ library LibRegistryItem {
     return AffinityComponent(getAddressById(components, AffCompID)).getValue(id);
   }
 
-  function getAttack(IComponents components, uint256 id) internal view returns (uint256) {
-    return AttackComponent(getAddressById(components, AttCompID)).getValue(id);
-  }
-
   function getClass(IComponents components, uint256 id) internal view returns (string memory) {
     return ClassComponent(getAddressById(components, ClassCompID)).getValue(id);
   }
 
-  function getDefense(IComponents components, uint256 id) internal view returns (uint256) {
-    return DefenseComponent(getAddressById(components, DefCompID)).getValue(id);
-  }
-
-  function getDuration(IComponents components, uint256 id) internal view returns (uint256) {
-    return DurationComponent(getAddressById(components, DurCompID)).getValue(id);
-  }
-
-  function getHP(IComponents components, uint256 id) internal view returns (uint256) {
-    return HPComponent(getAddressById(components, HPCompID)).getValue(id);
-  }
-
-  function getMagicAtt(IComponents components, uint256 id) internal view returns (uint256) {
-    return MagicAttComponent(getAddressById(components, MagAttCompID)).getValue(id);
-  }
-
-  function getMagicDef(IComponents components, uint256 id) internal view returns (uint256) {
-    return MagicDefComponent(getAddressById(components, MagDefCompID)).getValue(id);
-  }
-
-  function getMP(IComponents components, uint256 id) internal view returns (uint256) {
-    return MPComponent(getAddressById(components, MPCompID)).getValue(id);
-  }
-
   function getName(IComponents components, uint256 id) internal view returns (string memory) {
     return NameComponent(getAddressById(components, NameCompID)).getValue(id);
-  }
-
-  function getProbFailure(IComponents components, uint256 id) internal view returns (uint256) {
-    return ProbabilityFailureComponent(getAddressById(components, ProbFailCompID)).getValue(id);
-  }
-
-  function getProbSuccess(IComponents components, uint256 id) internal view returns (uint256) {
-    return ProbabilitySuccessComponent(getAddressById(components, ProbSuccCompID)).getValue(id);
-  }
-
-  function getRange(IComponents components, uint256 id) internal view returns (uint256) {
-    return RangeComponent(getAddressById(components, RangeCompID)).getValue(id);
-  }
-
-  function getSpeed(IComponents components, uint256 id) internal view returns (uint256) {
-    return SpeedComponent(getAddressById(components, SpeedCompID)).getValue(id);
   }
 
   function getType(IComponents components, uint256 id) internal view returns (string memory) {

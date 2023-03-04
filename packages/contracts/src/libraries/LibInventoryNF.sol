@@ -13,29 +13,20 @@ import { IndexItemComponent, ID as IndexItemCompID } from "components/IndexItemC
 import { IsInventoryComponent, ID as IsInvCompID } from "components/IsInventoryComponent.sol";
 import { IsNonFungibleComponent, ID as IsNonFungCompID } from "components/IsNonFungibleComponent.sol";
 import { AffinityComponent, ID as AffCompID } from "components/AffinityComponent.sol";
-import { AttackComponent, ID as AttCompID } from "components/AttackComponent.sol";
 import { ClassComponent, ID as ClassCompID } from "components/ClassComponent.sol";
-import { DefenseComponent, ID as DefCompID } from "components/DefenseComponent.sol";
-import { DurationComponent, ID as DurCompID } from "components/DurationComponent.sol";
-import { HPComponent, ID as HPCompID } from "components/HPComponent.sol";
-import { LevelComponent, ID as LevelCompID } from "components/LevelComponent.sol";
-import { MagicAttComponent, ID as MagAttCompID } from "components/MagicAttComponent.sol";
-import { MagicDefComponent, ID as MagDefCompID } from "components/MagicDefComponent.sol";
-import { MPComponent, ID as MPCompID } from "components/MPComponent.sol";
 import { NameComponent, ID as NameCompID } from "components/NameComponent.sol";
-import { ProbabilitySuccessComponent, ID as ProbSuccCompID } from "components/ProbabilitySuccessComponent.sol";
-import { ProbabilityFailureComponent, ID as ProbFailCompID } from "components/ProbabilityFailureComponent.sol";
-import { RangeComponent, ID as RangeCompID } from "components/RangeComponent.sol";
-import { SpeedComponent, ID as SpeedCompID } from "components/SpeedComponent.sol";
 import { TypeComponent, ID as TypeCompID } from "components/TypeComponent.sol";
 import { LibRegistryItem } from "libraries/LibRegistryItem.sol";
+import { LibStat } from "libraries/LibStat.sol";
 
 // handles nonfungible inventory instances
 library LibInventoryNF {
   /////////////////
   // INTERACTIONS
 
-  // Create a new non-fungible (item) inventory instance with a specified holder and item instance
+  // Create a new non-fungible (item) inventory instance with a specified holder and item instance.
+  // NOTE: we don't save fields like affinity, class, type and name since they're consistent
+  // between instances. We should consider adding them for ease of access.
   function create(
     IWorld world,
     IComponents components,
@@ -48,7 +39,8 @@ library LibInventoryNF {
     IdHolderComponent(getAddressById(components, IdHolderCompID)).set(id, holderID);
     IndexItemComponent(getAddressById(components, IndexItemCompID)).set(id, itemIndex);
 
-    // TODO: copy over the details from the registry. no variance in stats for now
+    uint256 registryID = LibRegistryItem.getByItemIndex(components, itemIndex);
+    LibStat.copy(components, registryID, id);
     return id;
   }
 
@@ -58,8 +50,7 @@ library LibInventoryNF {
     getComponentById(components, IsNonFungCompID).remove(id);
     getComponentById(components, IdHolderCompID).remove(id);
     getComponentById(components, IndexItemCompID).remove(id);
-
-    // TODO: detect stats that are set and delete them
+    LibStat.wipe(components, id);
   }
 
   // Transfer the specified NF inventory instance by updating the holder
@@ -72,7 +63,7 @@ library LibInventoryNF {
   }
 
   /////////////////
-  // CHECKS
+  // CHECKERS
 
   // Check if the specified entity is a non-fungible inventory instance
   function isInstance(IComponents components, uint256 id) internal view returns (bool) {
@@ -81,8 +72,32 @@ library LibInventoryNF {
       IsNonFungibleComponent(getAddressById(components, IsNonFungCompID)).has(id);
   }
 
+  // Check if the associated registry entry has an affinity
+  function hasAffinity(IComponents components, uint256 id) internal view returns (bool) {
+    uint256 registryID = getRegistryEntry(components, id);
+    return LibRegistryItem.hasAffinity(components, registryID);
+  }
+
+  // Check if the associated registry entry has a class
+  function hasClass(IComponents components, uint256 id) internal view returns (bool) {
+    uint256 registryID = getRegistryEntry(components, id);
+    return LibRegistryItem.hasClass(components, registryID);
+  }
+
+  // Check if the associated registry entry has a name
+  function hasName(IComponents components, uint256 id) internal view returns (bool) {
+    uint256 registryID = getRegistryEntry(components, id);
+    return LibRegistryItem.hasName(components, registryID);
+  }
+
+  // Check if the associated registry entry has a type
+  function hasType(IComponents components, uint256 id) internal view returns (bool) {
+    uint256 registryID = getRegistryEntry(components, id);
+    return LibRegistryItem.hasType(components, registryID);
+  }
+
   /////////////////
-  // COMPONENT RETRIEVAL
+  // GETTERS
 
   function getItemIndex(IComponents components, uint256 id) internal view returns (uint256) {
     return IndexItemComponent(getAddressById(components, IndexItemCompID)).getValue(id);
@@ -92,10 +107,48 @@ library LibInventoryNF {
     return IdHolderComponent(getAddressById(components, IdHolderCompID)).getValue(id);
   }
 
+  // Get the ID of the associated registry entry.
+  function getRegistryEntry(IComponents components, uint256 id) internal view returns (uint256) {
+    uint256 itemIndex = getItemIndex(components, id);
+    return LibRegistryItem.getByItemIndex(components, itemIndex);
+  }
+
+  // Get the affinity from the registry entry if it exists.
+  function getAffinity(IComponents components, uint256 id) internal view returns (string memory v) {
+    uint256 registryID = getRegistryEntry(components, id);
+    if (hasAffinity(components, id)) {
+      v = LibRegistryItem.getAffinity(components, registryID);
+    }
+  }
+
+  // Get the class from the registry entry if it exists.
+  function getClass(IComponents components, uint256 id) internal view returns (string memory v) {
+    uint256 registryID = getRegistryEntry(components, id);
+    if (hasClass(components, id)) {
+      v = LibRegistryItem.getClass(components, registryID);
+    }
+  }
+
+  // Get the name from the registry entry if it exists.
+  function getName(IComponents components, uint256 id) internal view returns (string memory v) {
+    uint256 registryID = getRegistryEntry(components, id);
+    if (hasName(components, id)) {
+      v = LibRegistryItem.getName(components, registryID);
+    }
+  }
+
+  // Get the type from the registry entry if it exists.
+  function getType(IComponents components, uint256 id) internal view returns (string memory v) {
+    uint256 registryID = getRegistryEntry(components, id);
+    if (hasType(components, id)) {
+      v = LibRegistryItem.getType(components, registryID);
+    }
+  }
+
   /////////////////
   // QUERIES
 
-  // get a specific non-fungible(item) inventory instance
+  // Get the specified inventory instance.
   // NOTE: not so useful as we can't just assume a single instances
   function get(
     IComponents components,
@@ -106,7 +159,7 @@ library LibInventoryNF {
     if (results.length > 0) result = results[0];
   }
 
-  // get all non-fungible(item) inventory entities matching filters. 0 values indicate no filter
+  // Get all non-fungible(item) inventory entities matching filters. 0 values indicate no filter.
   function _getAllX(
     IComponents components,
     uint256 holderID,
